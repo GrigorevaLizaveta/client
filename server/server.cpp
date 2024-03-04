@@ -7,11 +7,12 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <signal.h>
-#include <mutex>
+#include <sys/stat.h>  // Добавлен заголовок для mkdir
 
 #define MAX_THREADS 10
 
 std::mutex file_mutex;
+std::vector<std::thread> thread_pool;
 
 void handle_client(int client_socket, const std::string& save_path) {
     char buffer[1024];
@@ -40,6 +41,15 @@ void handle_client(int client_socket, const std::string& save_path) {
     close(client_socket);
 }
 
+void signal_handler(int signum) {
+    std::cout << "[*] Shutting down the server..." << std::endl;
+    for (auto& thread : thread_pool) {
+        thread.join();
+    }
+    close(server_socket);
+    exit(EXIT_SUCCESS);
+}
+
 void server_thread(int port, int max_threads, const std::string& save_path) {
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1) {
@@ -66,19 +76,9 @@ void server_thread(int port, int max_threads, const std::string& save_path) {
 
     std::cout << "[*] Listening on 0.0.0.0:" << port << std::endl;
 
-    std::vector<std::thread> thread_pool;
-
-    auto signal_handler = [](int signum) {
-        std::cout << "[*] Shutting down the server..." << std::endl;
-        for (auto& thread : thread_pool) {
-            thread.join();
-        }
-        close(server_socket);
-        exit(EXIT_SUCCESS);
-        };
-
-    signal(SIGTERM, signal_handler);
-    signal(SIGHUP, signal_handler);
+    auto sig_handler = signal_handler;
+    signal(SIGTERM, sig_handler);
+    signal(SIGHUP, sig_handler);
 
     while (true) {
         int client_socket = accept(server_socket, nullptr, nullptr);
