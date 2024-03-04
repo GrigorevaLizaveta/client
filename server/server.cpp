@@ -7,12 +7,14 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <signal.h>
-#include <sys/stat.h>  // Добавлен заголовок для mkdir
+#include <sys/stat.h>
+#include <mutex>  // Добавлен заголовок для std::mutex
 
 #define MAX_THREADS 10
 
 std::mutex file_mutex;
 std::vector<std::thread> thread_pool;
+int server_socket;  // Объявление server_socket в глобальной области видимости
 
 void handle_client(int client_socket, const std::string& save_path) {
     char buffer[1024];
@@ -51,7 +53,7 @@ void signal_handler(int signum) {
 }
 
 void server_thread(int port, int max_threads, const std::string& save_path) {
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);  // Используем глобальную переменную server_socket
     if (server_socket == -1) {
         std::cerr << "[!] Error creating server socket." << std::endl;
         exit(EXIT_FAILURE);
