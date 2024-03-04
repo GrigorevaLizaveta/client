@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <arpa/inet.h>  // Добавлен заголовок для inet_pton
 
 void send_file(const std::string& file_path, const std::string& server_address, int server_port) {
     std::ifstream file(file_path, std::ios::in | std::ios::binary);
@@ -64,3 +65,4 @@ int main(int argc, char* argv[]) {
     send_file(file_path, server_address, server_port);
 
     return 0;
+}
