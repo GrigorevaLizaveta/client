@@ -8,16 +8,16 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <sys/stat.h>
-#include <mutex>  // Добавлен заголовок для std::mutex
-#include <atomic> // Добавлен заголовок для std::atomic_bool
+#include <mutex>  
+#include <atomic> 
 
-constexpr int MAX_THREADS = 100; // Максимальное количество потоков
-constexpr int MAX_BUFFER_SIZE = 1024; // Максимальный размер буфера для данных
+constexpr int MAX_THREADS = 100;
+constexpr int MAX_BUFFER_SIZE = 1024;
 
 std::mutex file_mutex;
 std::vector<std::thread> thread_pool;
 std::atomic_bool is_running(true);
-int server_socket;  // Объявление server_socket в глобальной области видимости
+int server_socket;
 
 void handle_client(int client_socket, const std::string& save_path) {
     char buffer[MAX_BUFFER_SIZE];
@@ -59,7 +59,7 @@ void signal_handler(int signum) {
 }
 
 void server_thread(int port, int max_threads, const std::string& save_path) {
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);  // Используем глобальную переменную server_socket
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1) {
         std::cerr << "[!] Error creating server socket." << std::endl;
         exit(EXIT_FAILURE);
@@ -105,7 +105,6 @@ void server_thread(int port, int max_threads, const std::string& save_path) {
         }
     }
 
-    // Ожидание завершения всех потоков
     for (auto& thread : thread_pool) {
         thread.join();
     }

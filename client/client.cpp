@@ -1,10 +1,8 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <cstring>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <unistd.h>
-#include <arpa/inet.h>  // Добавлен заголовок для inet_pton
+#include <arpa/inet.h>
 
 void send_file(const std::string& file_path, const std::string& server_address, int server_port) {
     std::ifstream file(file_path, std::ios::in | std::ios::binary);
