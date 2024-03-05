@@ -4,45 +4,54 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-void send_file(const std::string& file_path, const std::string& server_address, int server_port) {
-    std::ifstream file(file_path, std::ios::in | std::ios::binary);
+using namespace std;
+
+// Отправка файла на сервер (& - оператор, возвращающий адрес операнда в памяти)
+void send_file_to_server(const string& file_path, const string& server_address, int server_port) {
+    ifstream file(file_path, ios::in | ios::binary); //ios - базовый класс для форматированного ввода и вывода данных.
+   //Проверка открытия файла
     if (!file.is_open()) {
-        std::cerr << "[!] Error opening file: " << file_path << std::endl;
+        cerr << "[!] Error opening file: " << file_path << endl;
         exit(EXIT_FAILURE);
     }
-
-    std::string content((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
+    //Чтение файла в строку content 
+    string content((istreambuf_iterator<char>(file)), (istreambuf_iterator<char>())); // istreatbuf... - объект входного итератора
     file.close();
 
+    //Извлечение имени файла 
     size_t pos = file_path.find_last_of('/');
-    std::string filename = (pos != std::string::npos) ? file_path.substr(pos + 1) : file_path;
+    //Проверка есть ли '/' и вычленение пути к файлу
+    string filename = (pos != string::npos) ? file_path.substr(pos + 1) : file_path;
 
-    std::string data = filename + "|" + content;
+    string data = filename + "|" + content;
 
+    //Создание сокета для клиента (AF_INET - семейства адресов IPv4, SOCK_STREAM - создание потокового сокета (протокол TCP), протокол по умолчанию)
     int client_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (client_socket == -1) {
-        std::cerr << "[!] Error creating client socket." << std::endl;
+        cerr << "[!] Error creating client socket." << endl;
         exit(EXIT_FAILURE);
     }
 
+    //структура sockaddr_in для представления адреса сервера
     sockaddr_in server_address_struct{};
-    server_address_struct.sin_family = AF_INET;
-    server_address_struct.sin_port = htons(server_port);
-
+    server_address_struct.sin_family = AF_INET;//Устанавливает семейство адресов для IPv4.
+    server_address_struct.sin_port = htons(server_port);  //Установка порта и конвертация
+   
     if (inet_pton(AF_INET, server_address.c_str(), &(server_address_struct.sin_addr)) <= 0) {
-        std::cerr << "[!] Invalid server address: " << server_address << std::endl;
+        cerr << "[!] Invalid server address: " << server_address << endl;
         close(client_socket);
         exit(EXIT_FAILURE);
     }
 
+    //соединение с сервером
     if (connect(client_socket, reinterpret_cast<struct sockaddr*>(&server_address_struct), sizeof(server_address_struct)) == -1) {
-        std::cerr << "[!] Error connecting to server." << std::endl;
+        cerr << "[!] Error connecting to server." << endl;
         close(client_socket);
         exit(EXIT_FAILURE);
     }
-
+    //Отправка данных на сервер
     if (send(client_socket, data.c_str(), data.size(), 0) == -1) {
-        std::cerr << "[!] Error sending data to server." << std::endl;
+        cerr << "[!] Error sending data to server." << endl;
         close(client_socket);
         exit(EXIT_FAILURE);
     }
@@ -52,15 +61,15 @@ void send_file(const std::string& file_path, const std::string& server_address, 
 
 int main(int argc, char* argv[]) {
     if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <file_path> <server_ip> <server_port>" << std::endl;
+        cerr << "Usage: " << argv[0] << " <file_path> <server_ip> <server_port>" << endl;
         exit(EXIT_FAILURE);
     }
 
-    std::string file_path = argv[1];
-    std::string server_address = argv[2];
+    string file_path = argv[1];
+    string server_address = argv[2];
     int server_port = atoi(argv[3]);
 
-    send_file(file_path, server_address, server_port);
+    send_file_to_server(file_path, server_address, server_port);
 
     return 0;
 }
