@@ -11,7 +11,7 @@
 #include <mutex>  // Добавлен заголовок для std::mutex
 #include <atomic> // Добавлен заголовок для std::atomic_bool
 
-constexpr int MAX_THREADS = 10; // Максимальное количество потоков
+constexpr int MAX_THREADS = 100; // Максимальное количество потоков
 constexpr int MAX_BUFFER_SIZE = 1024; // Максимальный размер буфера для данных
 
 std::mutex file_mutex;
