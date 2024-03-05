@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
             std::string content = received_data.substr(pos + 1);
 
             // сохранение данных в файл
-            save_file_in_server(filename, content);
+            save_file_on_server(filename, content);
 
             cout << "File received and saved: " << filename << endl;
         }
