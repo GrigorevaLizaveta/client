@@ -10,7 +10,8 @@
 #include <sys/stat.h>
 #include <mutex>  // Добавлен заголовок для std::mutex
 
-#define MAX_THREADS 10
+constexpr int MAX_THREADS = 10; // Максимальное количество потоков
+constexpr int MAX_BUFFER_SIZE = 1024; // Максимальный размер буфера для данных
 
 std::mutex file_mutex;
 std::vector<std::thread> thread_pool;
