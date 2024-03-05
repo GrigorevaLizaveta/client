@@ -9,17 +9,19 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <mutex>  // Добавлен заголовок для std::mutex
+#include <atomic> // Добавлен заголовок для std::atomic_bool
 
 constexpr int MAX_THREADS = 10; // Максимальное количество потоков
 constexpr int MAX_BUFFER_SIZE = 1024; // Максимальный размер буфера для данных
 
 std::mutex file_mutex;
 std::vector<std::thread> thread_pool;
+std::atomic_bool is_running(true);
 int server_socket;  // Объявление server_socket в глобальной области видимости
 
 void handle_client(int client_socket, const std::string& save_path) {
-    char buffer[1024];
-    ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+    char buffer[MAX_BUFFER_SIZE];
+    size_t bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
 
     if (bytes_received <= 0) {
         std::cerr << "[!] Error receiving data from client." << std::endl;
@@ -46,9 +48,12 @@ void handle_client(int client_socket, const std::string& save_path) {
 
 void signal_handler(int signum) {
     std::cout << "[*] Shutting down the server..." << std::endl;
+    is_running.store(false);
+
     for (auto& thread : thread_pool) {
         thread.join();
     }
+
     close(server_socket);
     exit(EXIT_SUCCESS);
 }
@@ -83,7 +88,7 @@ void server_thread(int port, int max_threads, const std::string& save_path) {
     signal(SIGTERM, sig_handler);
     signal(SIGHUP, sig_handler);
 
-    while (true) {
+    while (is_running.load()) {
         int client_socket = accept(server_socket, nullptr, nullptr);
 
         if (client_socket == -1) {
@@ -91,7 +96,7 @@ void server_thread(int port, int max_threads, const std::string& save_path) {
             continue;
         }
 
-        if (thread_pool.size() < static_cast<size_t>(max_threads)) {
+        if (thread_pool.size() < static_cast<size_t>(max_threads) && is_running.load()) {
             thread_pool.emplace_back(handle_client, client_socket, save_path);
             thread_pool.back().detach();
         }
@@ -99,6 +104,12 @@ void server_thread(int port, int max_threads, const std::string& save_path) {
             std::cerr << "[!] Maximum number of threads reached. Connection refused." << std::endl;
             close(client_socket);
         }
+    }
+}
+
+void wait_for_threads() {
+    for (auto& thread : thread_pool) {
+        thread.join();
     }
 }
 
@@ -127,6 +138,7 @@ int main(int argc, char* argv[]) {
     }
 
     server_thread(port, max_threads, save_path);
+    wait_for_threads();
 
     return 0;
 }
