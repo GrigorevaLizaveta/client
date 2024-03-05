@@ -98,23 +98,21 @@ void server_thread(int port, int max_threads, const std::string& save_path) {
 
         if (thread_pool.size() < static_cast<size_t>(max_threads) && is_running.load()) {
             thread_pool.emplace_back(handle_client, client_socket, save_path);
-            thread_pool.back().detach();
         }
         else {
             std::cerr << "[!] Maximum number of threads reached. Connection refused." << std::endl;
             close(client_socket);
         }
     }
-}
 
-void wait_for_threads() {
+    // Ожидание завершения всех потоков
     for (auto& thread : thread_pool) {
         thread.join();
     }
 }
 
 int main(int argc, char* argv[]) {
-    int port = 12345;
+    int port = 12346;
     int max_threads = MAX_THREADS;
     std::string save_path = "./received_files";
 
@@ -138,7 +136,6 @@ int main(int argc, char* argv[]) {
     }
 
     server_thread(port, max_threads, save_path);
-    wait_for_threads();
 
     return 0;
 }
